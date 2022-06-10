@@ -12,7 +12,7 @@
   roles: 
     - { role: datadog.datadog, become: yes }
   vars:
-    datadog_api_key: "d9b0099408b5596789a8e9867c6e944b"
+    datadog_api_key: "{{ apikey }}"
     # Change this if you are not in us1 {AWS)
     # - example: us3.datadoghq.com for Azure
     # - us5.datadoghq.com for Google cloud 
