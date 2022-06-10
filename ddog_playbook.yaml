@@ -8,19 +8,19 @@
 -
 
   # Hosts: where our play will run and options it will run with
-  hosts: all
+  hosts: <host-group> 
   roles: 
     - { role: datadog.datadog, become: yes }
   vars:
-    datadog_api_key: "d9b0099408b5596789a8e9867c6e944b"
+    datadog_api_key: "<datadog api key>"
     # Change this if you are not in us1 {AWS)
     # - example: us3.datadoghq.com for Azure
     # - us5.datadoghq.com for Google cloud 
-    datadog_site: "us3.datadoghq.com"
+    datadog_site: "datadoghq.com"
     datadog_agent_major_version: 7
     datadog_config:
       tags:
-        - "availability-zone:default"
+        - "availability-zone: default"
       process_config:
         enabled: "true"
     datadog_checks:
@@ -37,39 +37,36 @@
    # Install the lm_sensors package if it is physical host and not a VM
    # Install the PySensors package (required for Datadog sensors plugin)  
 - 
-    hosts: all
+    hosts: <host-group>
     vars_files:
       - vars.yaml
     vars:
-            #ansible_ssh_private_key_file: "{{ key1 }}"
-      datadog_path: '/etc/datadog-agent/datadog.yaml'
+      ansible_ssh_private_key_file: "{{ key1 }}"
+      datadog_path: "/etc/datadog-agent/datadog.yaml"
     tasks:
 
     # Set the availability-zone based on the hostname prefix
     # Add additional blocks for other data
     - name: Set the availability-zone tag based on hostname
-      ansible.builtin.lineinfile:
+      lineinfile:
         path: "{{ datadog_path }}"
-        regex: '^(.*)availability-zone.*'
-        line: "-  'availability-zone:singapore'"
-        state: present
-      when: ansible_hostname.startswith('sg')
+        search_string:  'availability-zone: default'
+        line: 'availability-zone: singapore'
+      when: ansible_hostname.startswith('sin')
 
     - name: Set the availability-zone tag based on hostname
-      ansible.builtin.lineinfile:
+      lineinfile:
         path: "{{ datadog_path }}"
-        regex: '^(.*)availability-zone.*'
-        line: "-  'availability-zone:west'"
-        state: present
+        search_string: 'availability-zone: default'
+        line: 'availability-zone: austin'
+      when: ansible_hostname.startswith('aus')
+
+    - name: Set the availability-zone tag based on hostname
+      lineinfile:
+        path: "{{ datadog_path }}"
+        search_string: 'availability-zone: default'
+        line: 'availability-zone: irvine'
       when: ansible_hostname.startswith('irv')
-
-    - name: Set the availability-zone tag based on hostname
-      ansible.builtin.lineinfile:
-        path: "{{ datadog_path }}"
-        regex: '^(.*)availability-zone.*'
-        line: "-  'availability-zone:east'"
-        state: present
-      when: ansible_hostname.startswith('wob')
 
     - name: Install the lm_sensors package for centos/Redhat
       yum:
@@ -77,19 +74,13 @@
         state: present
       when: ansible_virtualization_role == "host"
 
-      #    - name: Install the PySensors package
-      #pip:
-      #  become: True
-      #  become_user: dd-agent
-      #  executable: /opt/datadog-agent/embedded/bin/pip3
-      #  name: PySensors
-    - name: Install the PySensors package as dd-agent user
-      ansible.builtin.command:
-        cmd: sudo -u dd-agent /opt/datadog-agent/embedded/bin/pip install PySensors
-        creates: /opt/datadog-agent/.cache/pip/wheels/93/a5/65/f8f982d6bec83b1b9c99f127aed6d900ff25d69705b101d4a8/PySensors-0.0.4-py3-none-any.whl
+    - name: Install the PySensors package
+      pip:
+        executable: /opt/datadog-agent/embedded/bin/pip3
+        name: PySensors
 
     - name: Restart the datadog-agent
       ansible.builtin.service:
         name: datadog-agent
-        state: restarted
+        state: reloaded
 ...
